@@ -9,7 +9,7 @@ import os
 import keyboard
 import requests
 
-STATUS_URL = "https://pastebin.com/raw/dMcqsqT6"
+STATUS_URL = "https://pastebin.com/raw/"
 
 running = True
 detections = 0
