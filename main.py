@@ -3,10 +3,11 @@ import tkinter as tk
 import pyautogui
 import time
 import threading
-import sys
 import os
 import requests
 import platform
+
+from pynput import keyboard as pk
 
 STATUS_URL = "https://pastebin.com/raw/dMcqsqT6"
 
@@ -19,6 +20,7 @@ recast_cooldown = 0.3
 detecting_enabled = False
 
 scan_offset = 0
+
 SYSTEM = platform.system()
 
 
@@ -125,6 +127,19 @@ def toggle_topmost():
     app.wm_attributes("-topmost", topmost_var.get())
 
 
+def start_hotkey_listener():
+    def on_press(key):
+        try:
+            if key.char == "e" and (pk.Controller().pressed(pk.Key.shift)):
+                force_close()
+        except:
+            pass
+
+    listener = pk.Listener(on_press=on_press)
+    listener.daemon = True
+    listener.start()
+
+
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("green")
 
@@ -156,7 +171,12 @@ toggle_btn.pack(pady=10)
 
 topmost_var = tk.BooleanVar(value=False)
 
-ctk.CTkCheckBox(app, text="Settings Always On Top", variable=topmost_var, command=toggle_topmost).pack(pady=10)
+ctk.CTkCheckBox(
+    app,
+    text="Settings Always On Top",
+    variable=topmost_var,
+    command=toggle_topmost
+).pack(pady=10)
 
 box = tk.Toplevel()
 box.overrideredirect(True)
@@ -171,12 +191,17 @@ canvas.pack(fill="both", expand=True)
 
 def draw_box_animation():
     global scan_offset
+
     canvas.delete("all")
+
     w = box.winfo_width()
     h = box.winfo_height()
+
     canvas.create_rectangle(2, 2, w - 2, h - 2, outline="white", width=2)
+
     y = scan_offset % h
     canvas.create_line(0, y, w, y, fill="white", width=2)
+
     scan_offset += 2
     box.after(16, draw_box_animation)
 
@@ -201,6 +226,8 @@ canvas.bind("<Button-1>", start_move)
 canvas.bind("<B1-Motion>", move)
 
 draw_box_animation()
+
+start_hotkey_listener()
 
 threading.Thread(target=detect_red, daemon=True).start()
 
