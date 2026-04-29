@@ -6,8 +6,7 @@ import threading
 import os
 import requests
 import platform
-
-from pynput import keyboard as pk
+from pynput import keyboard
 
 STATUS_URL = "https://pastebin.com/raw/dMcqsqT6"
 
@@ -126,19 +125,18 @@ def toggle_detection():
 def toggle_topmost():
     app.wm_attributes("-topmost", topmost_var.get())
 
-
 def start_hotkey_listener():
     def on_press(key):
         try:
-            if key.char == "e" and (pk.Controller().pressed(pk.Key.shift)):
-                force_close()
+            if key.char == "e":
+                if any([key == keyboard.Key.shift_l, key == keyboard.Key.shift_r]):
+                    force_close()
         except:
             pass
 
-    listener = pk.Listener(on_press=on_press)
+    listener = keyboard.Listener(on_press=on_press)
     listener.daemon = True
     listener.start()
-
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("green")
