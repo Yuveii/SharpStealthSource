@@ -3,10 +3,11 @@ import tkinter as tk
 import pyautogui
 import time
 import threading
+import ctypes
+import sys
 import os
+import keyboard
 import requests
-import platform
-from pynput import keyboard
 
 STATUS_URL = "https://pastebin.com/raw/dMcqsqT6"
 
@@ -20,13 +21,23 @@ detecting_enabled = False
 
 scan_offset = 0
 
-SYSTEM = platform.system()
+
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
 
 
-def force_close():
-    global running
-    running = False
-    os._exit(0)
+def restart_as_admin():
+    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+    sys.exit()
+
+
+if not is_admin():
+    res = ctypes.windll.user32.MessageBoxW(0, "Restart as Administrator?", "Admin Recommended", 4)
+    if res == 6:
+        restart_as_admin()
 
 
 def check_service():
@@ -42,6 +53,15 @@ def check_service():
 
 
 check_service()
+
+
+def force_close():
+    global running
+    running = False
+    os._exit(0)
+
+
+keyboard.add_hotkey("shift+e", force_close)
 
 
 def click_mouse():
@@ -125,18 +145,6 @@ def toggle_detection():
 def toggle_topmost():
     app.wm_attributes("-topmost", topmost_var.get())
 
-def start_hotkey_listener():
-    def on_press(key):
-        try:
-            if key.char == "e":
-                if any([key == keyboard.Key.shift_l, key == keyboard.Key.shift_r]):
-                    force_close()
-        except:
-            pass
-
-    listener = keyboard.Listener(on_press=on_press)
-    listener.daemon = True
-    listener.start()
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("green")
@@ -145,6 +153,11 @@ app = ctk.CTk()
 app.geometry("340x380")
 app.title("Sharp Stealth")
 app.resizable(False, False)
+
+try:
+    app.iconbitmap(default="")
+except:
+    pass
 
 ctk.CTkLabel(app, text="Sharp Stealth", font=("Arial", 18, "bold")).pack(pady=15)
 
@@ -169,12 +182,8 @@ toggle_btn.pack(pady=10)
 
 topmost_var = tk.BooleanVar(value=False)
 
-ctk.CTkCheckBox(
-    app,
-    text="Settings Always On Top",
-    variable=topmost_var,
-    command=toggle_topmost
-).pack(pady=10)
+ctk.CTkCheckBox(app, text="Settings Always On Top", variable=topmost_var, command=toggle_topmost).pack(pady=10)
+
 
 box = tk.Toplevel()
 box.overrideredirect(True)
@@ -186,6 +195,8 @@ box.configure(bg="black")
 canvas = tk.Canvas(box, bg="black", highlightthickness=0)
 canvas.pack(fill="both", expand=True)
 
+scan_offset = 0
+
 
 def draw_box_animation():
     global scan_offset
@@ -195,10 +206,15 @@ def draw_box_animation():
     w = box.winfo_width()
     h = box.winfo_height()
 
-    canvas.create_rectangle(2, 2, w - 2, h - 2, outline="white", width=2)
+    canvas.create_rectangle(2, 2, w-2, h-2, outline="white", width=2)
 
     y = scan_offset % h
     canvas.create_line(0, y, w, y, fill="white", width=2)
+
+    for i in range(0, w, 30):
+        canvas.create_line(i, 0, i, h, fill="#222222")
+    for j in range(0, h, 30):
+        canvas.create_line(0, j, w, j, fill="#222222")
 
     scan_offset += 2
     box.after(16, draw_box_animation)
@@ -224,8 +240,6 @@ canvas.bind("<Button-1>", start_move)
 canvas.bind("<B1-Motion>", move)
 
 draw_box_animation()
-
-start_hotkey_listener()
 
 threading.Thread(target=detect_red, daemon=True).start()
 
