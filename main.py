@@ -8,8 +8,9 @@ import sys
 import os
 import keyboard
 import requests
+import platform
 
-STATUS_URL = "https://pastebin.com/raw/"
+STATUS_URL = "https://pastebin.com/raw/dMcqsqT6"
 
 running = True
 detections = 0
@@ -21,8 +22,15 @@ detecting_enabled = False
 
 scan_offset = 0
 
+SYSTEM = platform.system()
 
+
+# ---------------------------
+# ADMIN HANDLING (WINDOWS ONLY)
+# ---------------------------
 def is_admin():
+    if SYSTEM != "Windows":
+        return True
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
     except:
@@ -30,16 +38,29 @@ def is_admin():
 
 
 def restart_as_admin():
-    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+    if SYSTEM != "Windows":
+        return
+    ctypes.windll.shell32.ShellExecuteW(
+        None, "runas", sys.executable, " ".join(sys.argv), None, 1
+    )
     sys.exit()
 
 
-if not is_admin():
-    res = ctypes.windll.user32.MessageBoxW(0, "Restart as Administrator?", "Admin Recommended", 4)
+# Only Windows gets UAC prompt
+if SYSTEM == "Windows" and not is_admin():
+    res = ctypes.windll.user32.MessageBoxW(
+        0,
+        "Restart as Administrator?",
+        "Admin Recommended",
+        4
+    )
     if res == 6:
         restart_as_admin()
 
 
+# ---------------------------
+# REMOTE STATUS CHECK
+# ---------------------------
 def check_service():
     global running
     try:
@@ -146,6 +167,9 @@ def toggle_topmost():
     app.wm_attributes("-topmost", topmost_var.get())
 
 
+# ---------------------------
+# UI
+# ---------------------------
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("green")
 
@@ -153,11 +177,6 @@ app = ctk.CTk()
 app.geometry("340x380")
 app.title("Sharp Stealth")
 app.resizable(False, False)
-
-try:
-    app.iconbitmap(default="")
-except:
-    pass
 
 ctk.CTkLabel(app, text="Sharp Stealth", font=("Arial", 18, "bold")).pack(pady=15)
 
@@ -182,9 +201,17 @@ toggle_btn.pack(pady=10)
 
 topmost_var = tk.BooleanVar(value=False)
 
-ctk.CTkCheckBox(app, text="Settings Always On Top", variable=topmost_var, command=toggle_topmost).pack(pady=10)
+ctk.CTkCheckBox(
+    app,
+    text="Settings Always On Top",
+    variable=topmost_var,
+    command=toggle_topmost
+).pack(pady=10)
 
 
+# ---------------------------
+# BOX OVERLAY
+# ---------------------------
 box = tk.Toplevel()
 box.overrideredirect(True)
 box.geometry(f"{box_size}x{box_size}+500+300")
@@ -194,8 +221,6 @@ box.configure(bg="black")
 
 canvas = tk.Canvas(box, bg="black", highlightthickness=0)
 canvas.pack(fill="both", expand=True)
-
-scan_offset = 0
 
 
 def draw_box_animation():
@@ -211,15 +236,11 @@ def draw_box_animation():
     y = scan_offset % h
     canvas.create_line(0, y, w, y, fill="white", width=2)
 
-    for i in range(0, w, 30):
-        canvas.create_line(i, 0, i, h, fill="#222222")
-    for j in range(0, h, 30):
-        canvas.create_line(0, j, w, j, fill="#222222")
-
     scan_offset += 2
     box.after(16, draw_box_animation)
 
 
+# drag
 drag_x = 0
 drag_y = 0
 
