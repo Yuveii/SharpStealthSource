@@ -24,10 +24,6 @@ scan_offset = 0
 
 SYSTEM = platform.system()
 
-
-# ---------------------------
-# ADMIN HANDLING (WINDOWS ONLY)
-# ---------------------------
 def is_admin():
     if SYSTEM != "Windows":
         return True
@@ -45,8 +41,6 @@ def restart_as_admin():
     )
     sys.exit()
 
-
-# Only Windows gets UAC prompt
 if SYSTEM == "Windows" and not is_admin():
     res = ctypes.windll.user32.MessageBoxW(
         0,
@@ -57,10 +51,6 @@ if SYSTEM == "Windows" and not is_admin():
     if res == 6:
         restart_as_admin()
 
-
-# ---------------------------
-# REMOTE STATUS CHECK
-# ---------------------------
 def check_service():
     global running
     try:
@@ -166,10 +156,6 @@ def toggle_detection():
 def toggle_topmost():
     app.wm_attributes("-topmost", topmost_var.get())
 
-
-# ---------------------------
-# UI
-# ---------------------------
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("green")
 
@@ -208,10 +194,6 @@ ctk.CTkCheckBox(
     command=toggle_topmost
 ).pack(pady=10)
 
-
-# ---------------------------
-# BOX OVERLAY
-# ---------------------------
 box = tk.Toplevel()
 box.overrideredirect(True)
 box.geometry(f"{box_size}x{box_size}+500+300")
@@ -239,8 +221,6 @@ def draw_box_animation():
     scan_offset += 2
     box.after(16, draw_box_animation)
 
-
-# drag
 drag_x = 0
 drag_y = 0
 
